@@ -19,22 +19,19 @@ var SimplexNoise = function(gen) {
 		[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0], 
 		[2,0,1,3],[0,0,0,0],[0,0,0,0],[0,0,0,0],[3,0,1,2],[3,0,2,1],[0,0,0,0],[3,1,2,0], 
 		[2,1,0,3],[0,0,0,0],[0,0,0,0],[0,0,0,0],[3,1,0,2],[0,0,0,0],[3,2,0,1],[3,2,1,0]
-	]; 
-};
+	];
 
-SimplexNoise.prototype.setSeed = function(seed) {
 	this.p = [];
-	this.rand.seed = seed;
 	
 	for (var i=0; i<256; i++) {
-		this.p[i] = Math.floor(this.rand.nextRange(0, 255));
+		this.p[i] = this.rand.nextIntRange(0, 255);
 	}
 
 	this.perm = []; 
 	for(var i=0; i<512; i++) {
 		this.perm[i]=this.p[i & 255];
 	}
-}
+};
 
 SimplexNoise.prototype.dot = function(g, x, y) {
 	return g[0]*x + g[1]*y;

@@ -6,6 +6,7 @@
         
         <link href="css/map.css" rel="stylesheet">
 
+        <script type="text/javascript" src="js/pm_prng.js"></script>
         <script type="text/javascript" src="js/rhill-voronoi-core.min.js"></script>
         <script type="text/javascript" src="js/paper.js"></script>
         <script type="text/javascript" src="js/Simplex.js"></script>
@@ -16,6 +17,7 @@
 	<body>
         <canvas id="island" resize="true"></canvas>
         <canvas id="perlin" hidden="true"></canvas>
+        <a id="fileLink" href="img.png" download="output.png" style="display: block; position: absolute; top: 0; left: 0;">Download</a>
         
         <script type="application/javascript">
             paper.install(window);
@@ -24,13 +26,27 @@
 
                 var islandCanvas = document.getElementById('island');
                 var perlinCanvas = document.getElementById('perlin');
+                var link = document.getElementById('fileLink');
 
                 islandCanvas.onclick = function() {
-                    Island.toggleDebug();
-                    perlinCanvas.style.display = (perlinCanvas.style.display == 'block' ? 'none' : 'block');
+                    //Island.toggleDebug();
+                    //perlinCanvas.style.display = (perlinCanvas.style.display == 'block' ? 'none' : 'block');
+                    /*
+                    var data = islandCanvas.toDataURL("image/png");
+                    data.replace("image/png", "image/octet-stream");
+                    if (!window.open(data)) {
+                        document.location.href = data;
+                    }
+                    */
                 };
 
                 Island.init();
+
+                var data = islandCanvas.toDataURL("image/png");
+                link.setAttribute('href', data);
+                link.setAttribute('download', Island.seed + '.png');
+                //data.replace("image/png", "image/octet-stream");
+                
             };
         </script>
         <noscript>You need to enable Javascript in your browser for this page to display properly.</noscript>

@@ -47,6 +47,7 @@ var Island = {
     diagram: null,
     sites: [],
     seed: -1,
+    rand: null,
     perlin: null,
     cellsLayer: null,
     riversLayer: null,
@@ -77,11 +78,12 @@ var Island = {
         this.riversLayer = new paper.Layer({name: 'rivers'});
         this.debugLayer = new paper.Layer({name: 'debug', visible: false});
         
-        this.seed = Math.random();
+        this.seed = Math.random() * 2147483647;
+        this.rand = new PM_PRNG(this.seed);
         this.perlinCanvas = document.getElementById('perlin');
         this.perlinCanvas.width = this.config.perlinWidth;
         this.perlinCanvas.height = this.config.perlinHeight;
-        this.perlin = perlinNoise(this.perlinCanvas, 64, 64, this.seed);
+        this.perlin = perlinNoise(this.perlinCanvas, 64, 64, this.rand);
         this.randomSites();
         
         this.assignOceanCoastAndLand();
@@ -90,6 +92,7 @@ var Island = {
         this.assignBiomes();
         
         this.render();
+        console.log('Island', 'seed', this.seed);
     },
 
     randomSites: function (n) {
@@ -99,8 +102,8 @@ var Island = {
         if (this.config.sitesDistribution == 'random') {
             for (var i = 0; i < this.config.nbSites; i++) {
                 sites.push({
-                    x: Math.round(Math.random() * this.config.width),
-                    y: Math.round(Math.random() * this.config.height)
+                    x: this.rand.nextIntRange(0, this.config.width), //Math.round(Math.random() * this.config.width),
+                    y: this.rand.nextIntRange(0, this.config.height) //Math.round(Math.random() * this.config.height)
                 });
             }
         } else {
@@ -109,9 +112,9 @@ var Island = {
             var x = 0;
             var y = 0;
             for (var i = 0; i < this.config.nbSites; i++) {
-                sites.push({
-                    x: Math.max(Math.min(Math.round(x * delta + (Math.random() * rand)), this.config.width), 0),
-                    y: Math.max(Math.min(Math.round(y * delta + (Math.random() * rand)), this.config.height), 0)
+                sites.push({ // this.rand.nextIntRange(0, this.config.width)
+                    x: Math.max(Math.min(Math.round(x * delta + (this.rand.nextDoubleRange(0, rand))), this.config.width), 0), //Math.max(Math.min(Math.round(x * delta + (Math.random() * rand)), this.config.width), 0),
+                    y: Math.max(Math.min(Math.round(y * delta + (this.rand.nextDoubleRange(0, rand))), this.config.height), 0) //Math.max(Math.min(Math.round(y * delta + (Math.random() * rand)), this.config.height), 0)
                 });
                 x = x + 1;
                 if (x * delta > this.config.width) {
@@ -145,7 +148,7 @@ var Island = {
         var p = 1 / iCell * 0.1;
         while (iCell--) {
             cell = cells[iCell];
-            rn = Math.random();
+            rn = this.rand.nextDouble; //Math.random();
             // probability of apoptosis
             if (rn < p) {
                 continue;
@@ -275,7 +278,8 @@ var Island = {
     
     assignRivers: function() {
         for (var i = 0; i < this.config.nbRivers;) {
-            var cell = this.diagram.cells[this.getRandomInt(0, this.diagram.cells.length - 1)];
+            //var cell = this.diagram.cells[this.getRandomInt(0, this.diagram.cells.length - 1)];
+            var cell = this.diagram.cells[this.rand.nextIntRange(0, this.diagram.cells.length - 1)];
             if (!cell.coast) {
                 if (this.setAsRiver(cell, 1)) {
                     cell.source = true;
@@ -652,7 +656,7 @@ var Island = {
     },
     
     getRandomInt: function(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+        return this.rand.nextIntRange(min, max);
     },
 
     distance: function(a, b) {
