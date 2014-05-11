@@ -1,3 +1,7 @@
+(function(global, undefined) {
+
+var document = global.document;
+
 var DISPLAY_COLORS = {
     OCEAN: new paper.Color('#82caff'),
     BEACH: new paper.Color('#ffe98d'),
@@ -21,7 +25,9 @@ var DISPLAY_COLORS = {
     GRASSLAND: new paper.Color('#c4d4aa'),
     TROPICAL_RAIN_FOREST: new paper.Color('#9cbba9'),
     TROPICAL_SEASONAL_FOREST: new paper.Color('#a9cca4'),
-    SUBTROPICAL_DESERT: new paper.Color('#e9ddc7')
+    SUBTROPICAL_DESERT: new paper.Color('#e9ddc7'),
+
+    ERR: new paper.Color('#ededed')
 };
 
 var Island = {
@@ -32,7 +38,7 @@ var Island = {
         perlinHeight: 256,
         allowDebug: false, // if set to true, you can clic on the map to enter "debug" mode. Warning : debug mode is slow to initialize, set to false for faster rendering.
         nbSites: 10000, // nb of voronoi cell
-        sitesDistribution: 'hexagon', // distribution of the site : random, square or hexagon
+        sitesDistribution: 'random', // distribution of the site : random, square or hexagon
         sitesRandomisation: 80, // will move each site in a random way (in %), for the square or hexagon distribution to look more random
         nbGraphRelaxation: 0, // nb of time we apply the relaxation algo to the voronoi graph (slow !), for the random distribution to look less random
         cliffsThreshold: 0.15,
@@ -90,9 +96,14 @@ var Island = {
         this.assignRivers();
         this.assignMoisture();
         this.assignBiomes();
-        
-        this.render();
+
         console.log('Island', 'seed', this.seed);
+
+        try {
+            this.render();
+        } catch(e) {
+            console.log('Island', 'error', e);
+        }
     },
 
     randomSites: function (n) {
@@ -106,6 +117,14 @@ var Island = {
                     y: this.rand.nextIntRange(0, this.config.height) //Math.round(Math.random() * this.config.height)
                 });
             }
+
+            //function PoissonDiskSampler( width, height, minDistance, sampleFrequency, seed );
+            var poisson = new PoissonDiskSampler(this.config.width, this.config.height, Math.floor((this.config.width * this.config.height) / this.config.nbSites), 2, this.seed);
+            poisson.outputList = sites;
+            poisson.sampleUntilSolution();
+            sites = poisson.outputList;
+
+
         } else {
             var delta = Math.sqrt(this.config.width * this.config.height / this.config.nbSites);
             var rand = this.config.sitesRandomisation * delta / 100;
@@ -508,6 +527,9 @@ var Island = {
         this.cellsLayer.activate();
         for (var cellid in this.diagram.cells) {
             var cell = this.diagram.cells[cellid];
+
+            if (cell === undefined) { continue; }
+
             var color = this.getCellColor(cell);
             
             var cellPath = new Path();
@@ -607,14 +629,21 @@ var Island = {
     },
     
     getCellColor: function(cell) {
-        var c = DISPLAY_COLORS[cell.biome].clone();
+        var c;
+
+        try {
+            c = DISPLAY_COLORS[cell.biome].clone();
+        } catch(e) {
+            console.log('Island#getCellColor', 'error', e);
+            c = DISPLAY_COLORS['ERR'].clone();
+        }
         c.brightness = c.brightness - this.getShade(cell);
         
         return c;
     },
     
     getShade: function(cell) {
-        if (this.config.shading == 0) {
+        if (cell === undefined || this.config.shading == 0) {
             return 0;
             
         } else if (cell.ocean) {
@@ -626,7 +655,15 @@ var Island = {
         } else {
             var lowerCell = null;
             var upperCell = null;
-            var neighbors = cell.getNeighborIds();
+            var neighbors = 0;
+
+            if (cell.getNeighborIds) {
+                neighbors = cell.getNeighborIds();
+            } else {
+                console.log('Island#getShade', 'bad cell', cell);
+            }
+
+
             for (var j = 0; j < neighbors.length; j++) {
                 var nId = neighbors[j];
                 var neighbor = this.diagram.cells[nId];
@@ -666,3 +703,7 @@ var Island = {
     }
 
 };
+
+global.Island = Island;
+
+} (this));
